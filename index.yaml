@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  kabin:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2024-03-24T10:19:53.99211605Z"
+    description: A Helm chart for Kabin
+    digest: 42755f595f9618ffe1cf0945c9b84f81315bb543b1a343791ec670d529966911
+    name: kabin
+    type: application
+    urls:
+    - https://github.com/kabin-labs/charts/releases/download/kabin-0.1.0/kabin-0.1.0.tgz
+    version: 0.1.0
+generated: "2024-03-24T10:19:53.992123874Z"
