@@ -1,0 +1,237 @@
+# Default values for a service
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  pullPolicy: IfNotPresent
+  # repository: repository
+  # tag: "v1.0.0"
+  # if necessary to override ArgoCD auto deploy
+  # tagOverride: "v1.0.0"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+
+podAnnotations: {}
+
+podSecurityContext:
+  {}
+  # fsGroup: 2000
+
+securityContext:
+  {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# Set to 'app-http-port' named port in templates and referenced by that.
+# For overwriting app port modify this, env.vars.SERVER_PORT and optionally service.port.
+appHttpPort: &appHttpPort 3000
+appGrpcPort: &appGrpcPort 8787
+
+service:
+  type: ClusterIP
+  port: *appHttpPort
+  annotations: {}
+  #   prometheus.io/path: /stats/prometheus
+  #   prometheus.io/port: "15020"
+  #   prometheus.io/scrape: "true"
+  secondaryPorts:
+    []
+    # - name: gql-port
+    #   port: 3001
+    #   targetPort: gql-port
+    #   protocol: TCP
+
+ingress:
+  enabled: false
+  className: ""
+  # port: *appHttpPort
+  annotations:
+    {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  requests:
+    memory: "128Mi"
+    cpu: "50m"
+  limits:
+    memory: "384Mi"
+    cpu: "200m"
+
+# probes with the defaults, startup is optional and port is set to 'app-http-port'
+startupProbe:
+  httpGet:
+    path: /health/readiness
+  initialDelaySeconds: 10
+  timeoutSeconds: 11
+  periodSeconds: 10
+  successThreshold: 1
+  failureThreshold: 24 # app has up to ~4 mins to start; 3 minutes is not enough for many services
+livenessProbe:
+  httpGet:
+    path: /health/liveness
+  initialDelaySeconds: 0
+  timeoutSeconds: 11
+  periodSeconds: 10
+  successThreshold: 1
+  failureThreshold: 3
+readinessProbe:
+  httpGet:
+    path: /health/readiness
+  initialDelaySeconds: 0
+  timeoutSeconds: 11
+  periodSeconds: 10
+  successThreshold: 1
+  failureThreshold: 3
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env:
+  serviceNameReplaceRegex: "-(dev|test|staging|uat|prod)$"
+  from:
+    {}
+    # secretOrConfigMapName: secretRef / configMapRef (all entries are injected as env vars)
+  orderedGroupsMax: 2
+  vars:
+    # ENV_VAR_NAME1:
+    # value: "Using other var - $(OTHER_ENV_VAR_NAME)"
+    # order: 1 # optional, defaults to 0, up to orderedGroupsMax, ensures order when depending on other vars
+    # ENV_VAR_NAME2:
+    #   valueFrom:
+    #     configMapKeyRef / secretKeyRef:
+    #       name: "name of the ConfigMap / Secret"
+    #       key: "key of entry in the ConfigMap / Secret"
+    SERVER_HOST:
+      value: "0.0.0.0"
+    SERVER_PORT:
+      value: *appHttpPort # for changing need to overwrite this env var
+    # OTEL_TRACES_EXPORTER:
+    # value: "otlp" # TODO enable when envs are ready
+
+extraVolumes:
+  []
+  # - name: volumeName
+  #   configMap:
+  #     name: configMapName
+  #     defaultMode: 493
+  # - name: cert-test
+  #   secret:
+  #     secretName: cert-test
+
+extraVolumeMounts:
+  []
+  # - name: volumeName
+  #   mountPath: "/PATH/TO/MOUNT/unknown.yaml"
+  #   subPath: unknown.yaml
+  # - mountPath: "/opt/cert-test"
+  #   name: cert-test
+  #   readOnly: true
+
+# controls how pods are spread across your cluster
+topologySpreadConstraints:
+  enabled: false
+
+initContainers:
+  []
+  # - name: db-migration
+  #   image: "image:tag"
+  #   command: ["/bin/sh"]
+  #   args:
+  #     - -c
+  #     - |
+  #       [npm run db:migrate:prod]
+  #   env: []
+  #   resources:
+  #     requests:
+  #       cpu: 10m
+  #       memory: 64Mi
+  #     limits:
+  #       cpu: 20m
+  #       memory: 128Mi
+
+secondaryContainers:
+  []
+  # - name: "graphql"
+  #   image: "image:tag"
+  #   imagePullPolicy: "IfNotPresent"
+  #   command: [ "/bin/sh" ]
+  #   args:
+  #     - -c
+  #     - |
+  #       "npm run start:graphql:prod"
+  #   env:
+  #     - name: LOG_LEVEL
+  #       value: "debug"
+  #   ports:
+  #     - name: gql-port
+  #       containerPort:  3001
+  #       protocol: TCP
+  #   livenessProbe:
+  #     httpGet:
+  #       path: /health
+  #       port: gql-port
+  #   readinessProbe:
+  #     httpGet:
+  #       path: /health
+  #       port: gql-port
+  #   resources:
+  #     requests:
+  #       cpu: 10m
+  #       memory: 64Mi
+  #     limits:
+  #       cpu: 20m
+  #       memory: 128Mi
+
+cronJobs:
+  []
+  # - name: "testJob"
+  #   image:
+  #     repository: docker.io/library/node
+  #     tag: 18.1.0-bullseye
+  #   schedule: "0 0 * * *"
+  #   command: ["/bin/sh", "-c"]
+  #   importEnv: true
+  #   resources:
+  #     requests:
+  #       memory: "64Mi"
+  #       cpu: "10m"
+  #     limits:
+  #       memory: "128Mi"
+  #       cpu: "20m"
+  #   args:
+  #     - "echo test"

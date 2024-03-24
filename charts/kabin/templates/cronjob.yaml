@@ -1,0 +1,85 @@
+{{- if .Values.cronJobs}}
+{{- range $key, $cronJob := .Values.cronJobs }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $cronJob.container.name }}
+spec:
+  schedule: "{{ $cronJob.schedule }}"
+  concurrencyPolicy: "{{ $cronJob.concurrencyPolicy | default "Replace" }}"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            sidecar.istio.io/inject: "false"
+        spec:
+          {{- with $cronJob.initContainer }}
+          initContainers:
+          - name: {{ .name }}
+            image: "{{ .image.repository }}:{{ .image.tag }}"
+            {{- if .command }}
+            command:
+            {{- range .command }}
+              - {{ . }}
+            {{- end }}
+            {{- end }}
+            {{- if .args }}
+            args:
+            {{- range .args }}
+              - {{ . }}
+            {{- end }}
+            {{- end }}
+
+            {{- if and $.Values.env $cronJob.importEnv }}
+            envFrom:
+            {{- range $name, $refType := $.Values.env.from }}
+              - {{ $refType }}:
+                  name: {{ $name | quote }}
+            {{- end }}
+
+            env:
+              {{- include "service.envVars" $ | indent 14 }}
+            {{- end }}
+
+            {{- if .resources }}
+            resources: {{- toYaml .resources | nindent 14}}
+            {{- end }}
+          {{- end }}
+
+          {{- with $cronJob.container }}
+          containers:
+          - name: {{ .name }}
+            image: "{{ .image.repository }}:{{ .image.tag }}"
+            {{- if .command }}
+            command:
+            {{- range .command }}
+              - {{ . }}
+            {{- end }}
+            {{- end }}
+            {{- if .args }}
+            args:
+            {{- range .args }}
+              - {{ . }}
+            {{- end }}
+            {{- end }}
+
+            {{- if and $.Values.env $cronJob.importEnv }}
+            envFrom:
+            {{- range $name, $refType := $.Values.env.from }}
+              - {{ $refType }}:
+                  name: {{ $name | quote }}
+            {{- end }}
+
+            env:
+              {{- include "service.envVars" $ | indent 14 }}
+            {{- end }}
+
+            {{- if .resources }}
+            resources: {{- toYaml .resources | nindent 14}}
+            {{- end }}
+          restartPolicy: Never
+          {{- end }}
+---
+{{- end}}
+{{- end}}
