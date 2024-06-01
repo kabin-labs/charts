@@ -1,0 +1,10 @@
+{{ if eq .Values.providerRef "do" }}
+apiVersion: kubernetes.do.crossplane.io/v1alpha1
+kind: DOKubernetesCluster
+metadata:
+  name: {{ .Values.name }}
+spec:
+  forProvider:
+    region: {{ .Values.region }}
+    {{.Values.doClusterSpec | toYaml | nindent 4}}
+{{- end }}
