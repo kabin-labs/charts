@@ -2,4 +2,4 @@
 #providerRef: do
 #region: nyc1
 #url: management.kabin.dev
-#doClusterSpec: {}
+doClusterSpec: {}
